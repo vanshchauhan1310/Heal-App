@@ -4,7 +4,12 @@ import { Platform } from 'react-native';
 // Use 192.168.29.212 for Android/Physical devices to reach the backend on this machine
 const BASE_URL = Platform.OS === 'android' ? 'http://192.168.29.212:5000/api' : 'http://localhost:5000/api';
 
+let authToken = null;
+
 const api = {
+    setToken: (token) => {
+        authToken = token;
+    },
     auth: {
         login: async (email, password) => {
             const response = await fetch(`${BASE_URL}/auth/login`, {
@@ -12,7 +17,11 @@ const api = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-            return response.json();
+            const data = await response.json();
+            if (data.session?.access_token) {
+                authToken = data.session.access_token;
+            }
+            return data;
         },
         sendOtp: async (phone) => {
             const response = await fetch(`${BASE_URL}/auth/send-otp`, {
@@ -28,14 +37,21 @@ const api = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, token }),
             });
-            return response.json();
+            const data = await response.json();
+            if (data.session?.access_token) {
+                authToken = data.session.access_token;
+            }
+            return data;
         },
     },
     user: {
         updateProfile: async (data) => {
             const response = await fetch(`${BASE_URL}/users/profile`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
                 body: JSON.stringify(data),
             });
             return response.json();

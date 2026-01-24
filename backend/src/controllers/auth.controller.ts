@@ -5,11 +5,6 @@ import { supabase } from '../config/supabase';
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-        res.status(400).json({ error: 'Email and password are required' });
-        return;
-    }
-
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
@@ -21,20 +16,19 @@ export const login = async (req: Request, res: Response) => {
             return;
         }
 
-        res.status(200).json({ user: data.user, session: data.session });
+        res.status(200).json({
+            message: 'Login successful',
+            user: data.user,
+            session: data.session
+        });
     } catch (err: any) {
         res.status(500).json({ error: 'Internal Server Error', details: err.message });
     }
 };
 
-// Signup Wrapper (Optional, simpler to just use client-side for most cases, but good for admin)
+// Signup Wrapper
 export const signup = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-        res.status(400).json({ error: 'Email and password are required' });
-        return;
-    }
 
     try {
         const { data, error } = await supabase.auth.signUp({
@@ -47,7 +41,11 @@ export const signup = async (req: Request, res: Response) => {
             return;
         }
 
-        res.status(201).json({ user: data.user, session: data.session });
+        res.status(201).json({
+            message: 'Registration successful',
+            user: data.user,
+            session: data.session
+        });
     } catch (err: any) {
         res.status(500).json({ error: 'Internal Server Error', details: err.message });
     }
@@ -56,18 +54,17 @@ export const signup = async (req: Request, res: Response) => {
 // Send OTP (Phone)
 export const sendOtp = async (req: Request, res: Response) => {
     const { phone } = req.body;
-    if (!phone) {
-        res.status(400).json({ error: 'Phone number is required' });
-        return;
-    }
+
     try {
         const { error } = await supabase.auth.signInWithOtp({
             phone,
         });
+
         if (error) {
             res.status(400).json({ error: error.message });
             return;
         }
+
         res.status(200).json({ message: 'OTP sent successfully' });
     } catch (err: any) {
         res.status(500).json({ error: 'Internal Server Error', details: err.message });
@@ -77,21 +74,24 @@ export const sendOtp = async (req: Request, res: Response) => {
 // Verify OTP (Phone)
 export const verifyOtp = async (req: Request, res: Response) => {
     const { phone, token } = req.body;
-    if (!phone || !token) {
-        res.status(400).json({ error: 'Phone and OTP are required' });
-        return;
-    }
+
     try {
         const { data, error } = await supabase.auth.verifyOtp({
             phone,
             token,
             type: 'sms',
         });
+
         if (error) {
             res.status(401).json({ error: error.message });
             return;
         }
-        res.status(200).json({ user: data.user, session: data.session });
+
+        res.status(200).json({
+            message: 'OTP verified successfully',
+            user: data.user,
+            session: data.session
+        });
     } catch (err: any) {
         res.status(500).json({ error: 'Internal Server Error', details: err.message });
     }
