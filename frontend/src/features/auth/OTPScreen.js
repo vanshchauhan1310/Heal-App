@@ -54,7 +54,7 @@ const OTPScreen = () => {
                 // Success: User is logged in.
                 // Store session if needed? For now just navigate.
                 Alert.alert("Success", "Verified successfully!", [
-                    { text: "OK", onPress: () => navigation.replace('Questionnaire') }
+                    { text: "OK", onPress: () => navigation.replace('AuthLoading') }
                 ]);
             }
         } catch (error) {

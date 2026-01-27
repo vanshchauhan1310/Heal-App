@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { questionnaireData } from '../../constants/questionnaireData';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useUser } from '../../context/UserContext'; // Import Context
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,6 +51,8 @@ const QuestionnaireScreen = () => {
     // Personal Details State
     const [name, setName] = useState('');
     const [dob, setDob] = useState(new Date());
+    const [country, setCountry] = useState('');
+    const [menarcheAge, setMenarcheAge] = useState('');
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     // BMI State
@@ -160,27 +163,85 @@ const QuestionnaireScreen = () => {
         }
     };
 
-    const finishQuestionnaire = () => {
-        let riskCategory = 'Low Risk';
-        let action = 'Lifestyle guidance + monitoring';
+    const finishQuestionnaire = async () => {
+        console.log("Starting finishQuestionnaire...");
+        // Helper to find the latest date from selectedDates
+        const findLatestSelectedDate = () => {
+            const dates = Object.keys(selectedDates);
+            if (dates.length === 0) return null;
+            const sortedDates = dates.sort((a, b) => new Date(b) - new Date(a));
+            return new Date(sortedDates[0]);
+        };
 
-        if (totalScore >= 14) {
-            riskCategory = 'High Risk';
-            action = 'HEAL + gynecologist referral';
-        } else if (totalScore >= 7) {
-            riskCategory = 'Moderate Risk';
-            action = '3-month HEAL guided journey';
+        // 1. Calculate Risk
+        let calculatedTotalScore = 0;
+        Object.values(answers).forEach((val) => {
+            if (val && typeof val.score === 'number') calculatedTotalScore += val.score;
+        });
+        const riskCategory = calculatedTotalScore <= 5 ? 'Low' : calculatedTotalScore <= 10 ? 'Moderate' : 'High';
+
+        console.log("Risk Calculated:", riskCategory);
+
+        // 2. Update Context (Immediate UI update)
+        try {
+            await updateUser({
+                name: name,
+                riskLevel: riskCategory,
+                isGuest: false,
+            });
+            console.log("Context Updated");
+        } catch (e) {
+            console.error("Context Update Error:", e);
         }
 
-        // Pass Name to Home Screen -> Cycle Tab
-        navigation.replace('Home', {
-            screen: 'Cycle',
-            params: {
-                userName: name,
-                riskCategory,
-                totalScore
-            }
-        });
+        // 3. Save to Backend Database (Persistent)
+        const bmiStatus = bmiResult ? getBMIStatus(bmiResult)?.label : null;
+        const lastPeriodDate = findLatestSelectedDate();
+
+        const profileData = {
+            userId: '123e4567-e89b-12d3-a456-426614174000', // Replace with real Auth ID when Auth is live
+            name: name,
+            dob: dob ? dob.toISOString().split('T')[0] : null,
+            country: country,
+            menarcheAge: menarcheAge,
+            height: heightCm ? parseFloat(heightCm) : null,
+            weight: weight ? parseFloat(weight) : null,
+            bmi: bmiResult ? parseFloat(bmiResult) : null,
+            bmiStatus: bmiStatus,
+            lastPeriodDate: lastPeriodDate ? lastPeriodDate.toISOString().split('T')[0] : null,
+            avgCycleLength: 28, // Default or from input if you added that step
+            avgPeriodLength: 5, // Default
+            riskScore: calculatedTotalScore,
+            riskLevel: riskCategory,
+            symptoms: answers
+        };
+
+        console.log("Saving Profile Data...", profileData);
+
+        try {
+            await api.user.updateProfile(profileData);
+            console.log('Profile saved to DB');
+        } catch (error) {
+            console.error('Failed to save profile to DB:', error);
+            // Optionally, show an alert to the user
+            Alert.alert("Error", "Failed to save your profile. Please try again.");
+        }
+
+        // 4. Navigate
+        console.log("Navigating to Home...");
+        try {
+            navigation.replace('Home', {
+                screen: 'Cycle',
+                params: {
+                    userName: name,
+                    riskCategory,
+                    totalScore
+                }
+            });
+            console.log("Navigation call failed?");
+        } catch (navError) {
+            console.error("Navigation Error:", navError);
+        }
     };
 
     // --- Calendar Logic ---
@@ -249,6 +310,17 @@ const QuestionnaireScreen = () => {
             </View>
 
             <View style={styles.inputGroup}>
+                <Text style={styles.label}>Where are you from?</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Country"
+                    value={country}
+                    onChangeText={setCountry}
+                    placeholderTextColor="#999"
+                />
+            </View>
+
+            <View style={styles.inputGroup}>
                 <Text style={styles.label}>Date of Birth</Text>
                 <TouchableOpacity
                     style={styles.datePickerButton}
@@ -267,6 +339,18 @@ const QuestionnaireScreen = () => {
                         maximumDate={new Date()}
                     />
                 )}
+            </View>
+
+            <View style={styles.inputGroup}>
+                <Text style={styles.label}>Age of 1st Period</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="e.g. 13"
+                    keyboardType="numeric"
+                    value={menarcheAge}
+                    onChangeText={setMenarcheAge}
+                    placeholderTextColor="#999"
+                />
             </View>
 
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>

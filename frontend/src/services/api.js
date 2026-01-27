@@ -44,6 +44,40 @@ const api = {
             return data;
         },
     },
+    wellness: {
+        saveDailyLog: async (data) => { // Data: { date, mood, symptoms: [], notes }
+            const response = await fetch(`${BASE_URL}/wellness/logs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(data),
+            });
+            return response.json();
+        },
+        getCycleHistory: async () => {
+            const response = await fetch(`${BASE_URL}/wellness/cycles`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            return response.json();
+        },
+        addCycle: async (data) => {
+            const response = await fetch(`${BASE_URL}/wellness/cycles`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(data),
+            });
+            return response.json();
+        }
+    },
     user: {
         updateProfile: async (data) => {
             const response = await fetch(`${BASE_URL}/users/profile`, {

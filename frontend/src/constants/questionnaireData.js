@@ -4,10 +4,10 @@ export const questionnaireData = [
         section: 'PERSONAL DETAILS',
         question: 'Tell us a bit about yourself',
         description: 'This helps us personalize your experience.',
-        type: 'personal-details', // Special type for Name & DOB
+        type: 'personal-details',
         mandatory: true,
     },
-    // SECTION A
+    // --- SECTION A: MENSTRUAL CYCLE PATTERN ---
     {
         id: 'Q1',
         section: 'SECTION A — MENSTRUAL CYCLE PATTERN',
@@ -44,7 +44,7 @@ export const questionnaireData = [
             { label: 'Frequently', score: 3 },
         ],
     },
-    // SPECIAL STEP: CALENDAR (After Q3)
+    // --- SPECIAL STEP: CALENDAR ---
     {
         id: 'CALENDAR',
         type: 'calendar',
@@ -52,7 +52,7 @@ export const questionnaireData = [
         question: 'Please log your Period Dates for the last 3 months.',
         description: 'This helps us understand your cycle intervals better.',
     },
-    // SECTION B
+    // --- SECTION B: ANDROGEN-RELATED SYMPTOMS ---
     {
         id: 'Q4',
         section: 'SECTION B — ANDROGEN-RELATED SYMPTOMS',
@@ -88,7 +88,7 @@ export const questionnaireData = [
             { label: 'Moderate or progressive', score: 2 },
         ],
     },
-    // SECTION C (Part 1)
+    // --- SECTION C: METABOLIC & FAMILY RISK FACTORS ---
     {
         id: 'Q7',
         section: 'SECTION C — METABOLIC & FAMILY RISK FACTORS',
@@ -99,7 +99,7 @@ export const questionnaireData = [
             { label: 'Yes', score: 2 },
         ],
     },
-    // SPECIAL STEP: BMI (After Q7)
+    // --- SPECIAL STEP: BMI ---
     {
         id: 'BMI',
         type: 'bmi',
@@ -107,7 +107,6 @@ export const questionnaireData = [
         question: 'Calculate your BMI',
         description: 'Please enter your height and weight.',
     },
-    // SECTION C (Part 2)
     {
         id: 'Q8',
         section: 'SECTION C — METABOLIC & FAMILY RISK FACTORS',
@@ -129,7 +128,7 @@ export const questionnaireData = [
             { label: 'Yes', score: 2 },
         ],
     },
-    // SECTION D
+    // --- SECTION D: QUALITY OF LIFE & FUNCTIONAL IMPACT ---
     {
         id: 'Q10',
         section: 'SECTION D — QUALITY OF LIFE & FUNCTIONAL IMPACT',

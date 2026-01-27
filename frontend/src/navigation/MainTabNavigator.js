@@ -22,11 +22,13 @@ const CustomTabBarButton = ({ children, onPress }) => (
         onPress={onPress}
     >
         <View style={{
-            width: 60, // Slightly smaller match image
+            width: 60,
             height: 60,
             borderRadius: 30,
-            backgroundColor: '#4CAF50', // Green Theme
-            marginBottom: 4, // Spacing for text
+            backgroundColor: '#4CAF50',
+            justifyContent: 'center', // Ensure vertical centering
+            alignItems: 'center', // Ensure horizontal centering
+            paddingTop: 2, // Slight visual adjustment if needed for optic center
         }}>
             {children}
         </View>
