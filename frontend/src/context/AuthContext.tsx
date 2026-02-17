@@ -17,6 +17,8 @@ interface AuthContextType {
     sendOTP: (phoneNumber: string, verifier: any) => Promise<ConfirmationResult>;
     verifyOTP: (confirmationResult: ConfirmationResult, code: string) => Promise<void>;
     logout: () => Promise<void>;
+    confirmationResult: ConfirmationResult | null;
+    setConfirmationResult: (result: ConfirmationResult | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [authenticated, setAuthenticated] = useState(false);
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
     useEffect(() => {
         let unsubscribeDoc: (() => void) | null = null;
@@ -77,8 +80,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 throw new Error("Missing required arguments for sendOTP");
             }
 
-            const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-            return confirmationResult;
+            const result = await signInWithPhoneNumber(auth, phoneNumber, verifier);
+            setConfirmationResult(result);
+            return result;
         } catch (error) {
             console.error("Error in AuthContext.sendOTP:", error);
             throw error;
@@ -132,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, authenticated, sendOTP, verifyOTP, logout }}>
+        <AuthContext.Provider value={{ user, loading, authenticated, sendOTP, verifyOTP, logout, confirmationResult, setConfirmationResult }}>
             {children}
         </AuthContext.Provider>
     );

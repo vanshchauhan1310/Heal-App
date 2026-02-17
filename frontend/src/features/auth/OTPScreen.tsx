@@ -15,12 +15,13 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const OTPScreen = () => {
-    const navigation = useNavigation();
-    const route = useRoute();
-    const { phoneNumber } = route.params || { phoneNumber: 'xxxxxxxxxx' };
+    const navigation = useNavigation<any>();
+    const route = useRoute<any>();
+    const { phoneNumber } = route.params || {};
+    const { verifyOTP, confirmationResult } = useAuth();
 
     const [otp, setOtp] = useState('');
     const [timer, setTimer] = useState(30);
@@ -46,19 +47,19 @@ const OTPScreen = () => {
 
         setLoading(true);
         try {
-            const result = await api.auth.verifyOtp(phoneNumber, code);
-
-            if (result.error) {
-                Alert.alert("Verification Failed", result.error);
-            } else {
-                // Success: User is logged in.
-                // Store session if needed? For now just navigate.
-                Alert.alert("Success", "Verified successfully!", [
-                    { text: "OK", onPress: () => navigation.replace('AuthLoading') }
-                ]);
+            if (!confirmationResult) {
+                throw new Error("Missing confirmation result. Please try logging in again.");
             }
-        } catch (error) {
-            Alert.alert("Error", "Could not verify code.");
+
+            await verifyOTP(confirmationResult, code);
+
+            // Note: AuthContext handles setUser and setAuthenticated, 
+            // and AppNavigator will automatically switch to the logged-in view.
+            // We don't necessarily need to navigate manually, but a success alert is nice.
+            Alert.alert("Success", "Verified successfully!");
+        } catch (error: any) {
+            console.error("Verification error:", error);
+            Alert.alert("Verification Failed", error.message || "Invalid OTP code.");
         } finally {
             setLoading(false);
         }
