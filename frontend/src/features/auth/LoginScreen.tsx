@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -12,56 +12,67 @@ import {
     SafeAreaView,
     TouchableWithoutFeedback,
     Keyboard,
+    Alert,
+    ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import { firebaseConfig } from '../../config/firebase';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
+    const { sendOTP } = useAuth();
     const [phoneNumber, setPhoneNumber] = useState('');
     const [isFocused, setIsFocused] = useState(false);
-
     const [loading, setLoading] = useState(false);
+
+    // reCAPTCHA ref
+    const recaptchaVerifier = useRef<any>(null);
 
     const handleContinue = async () => {
         if (phoneNumber.length >= 10) {
             setLoading(true);
             try {
-                // Call Backend API
-                // For now, Supabase requires country code. Assuming +91 or adding it.
-                // Let's assume user enters 10 digits, we append country code.
                 const fullPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
 
-                const result = await api.auth.sendOtp(fullPhone);
-
-                if (result.error) {
-                    alert("Login Failed: " + result.error);
-                } else {
-                    navigation.navigate('OTP', { phoneNumber: fullPhone });
+                if (!recaptchaVerifier.current) {
+                    throw new Error("reCAPTCHA verifier not ready");
                 }
-            } catch (error) {
-                alert("Error: Could not connect to server.");
-                console.error(error);
+
+                // Pass the current verifier to the sendOTP function
+                const confirmation = await sendOTP(fullPhone, recaptchaVerifier.current);
+
+                navigation.navigate('OTP', {
+                    phoneNumber: fullPhone,
+                    confirmationResult: confirmation
+                });
+            } catch (error: any) {
+                Alert.alert("Login Failed", error.message || "Could not connect to Firebase.");
             } finally {
                 setLoading(false);
             }
         } else {
-            alert("Please enter a valid phone number");
+            Alert.alert("Invalid Input", "Please enter a valid 10-digit phone number");
         }
     };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <SafeAreaView style={styles.container}>
+                <FirebaseRecaptchaVerifierModal
+                    ref={recaptchaVerifier}
+                    firebaseConfig={firebaseConfig as any}
+                    attemptInvisibleVerification={true}
+                />
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.keyboardView}
                 >
                     <View style={styles.content}>
-                        {/* Logo Section */}
                         <View style={styles.logoContainer}>
                             <Image
                                 source={require('../../../assets/intro/intro.png')}
@@ -70,7 +81,6 @@ const LoginScreen = () => {
                             />
                         </View>
 
-                        {/* Input Section */}
                         <View style={styles.formContainer}>
                             <Text style={styles.title}>Enter your number</Text>
 
@@ -87,6 +97,7 @@ const LoginScreen = () => {
                                     placeholderTextColor="#A0C8A0"
                                     selectionColor="#4CAF50"
                                     maxLength={10}
+                                    editable={!loading}
                                 />
                             </View>
 
@@ -94,6 +105,7 @@ const LoginScreen = () => {
                                 style={styles.button}
                                 onPress={handleContinue}
                                 activeOpacity={0.8}
+                                disabled={loading}
                             >
                                 <LinearGradient
                                     colors={['#4CAF50', '#2E7D32']}
@@ -101,7 +113,11 @@ const LoginScreen = () => {
                                     end={{ x: 1, y: 0 }}
                                     style={styles.buttonGradient}
                                 >
-                                    <Text style={styles.buttonText}>Continue</Text>
+                                    {loading ? (
+                                        <ActivityIndicator color="white" />
+                                    ) : (
+                                        <Text style={styles.buttonText}>Continue</Text>
+                                    )}
                                 </LinearGradient>
                             </TouchableOpacity>
 
@@ -119,7 +135,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#E6F4EA', // Light green background matching reference
+        backgroundColor: '#E6F4EA',
     },
     keyboardView: {
         flex: 1,
@@ -178,19 +194,19 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -10,
         left: 12,
-        backgroundColor: '#E6F4EA', // Match bg to hide border
+        backgroundColor: '#E6F4EA',
         paddingHorizontal: 4,
         fontSize: 12,
         color: '#2E7D32',
         fontWeight: '600',
-        zIndex: 1, // Ensure label is above border
+        zIndex: 1,
     },
     input: {
         fontSize: 18,
         color: '#1B3A23',
         fontWeight: '500',
         width: '100%',
-        height: '100%', // Take full height of container
+        height: '100%',
     },
     button: {
         width: '100%',
