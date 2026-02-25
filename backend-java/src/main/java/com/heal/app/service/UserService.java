@@ -4,8 +4,8 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
-import com.google.firebase.cloud.FirestoreClient;
 import com.heal.app.model.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
@@ -13,8 +13,10 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class UserService {
 
+    @Autowired
+    private Firestore db;
+
     public User getUserLandingData(String userId) throws ExecutionException, InterruptedException {
-        Firestore db = FirestoreClient.getFirestore();
         DocumentReference docRef = db.collection("users").document(userId);
         ApiFuture<DocumentSnapshot> future = docRef.get();
         DocumentSnapshot document = future.get();

@@ -3,8 +3,8 @@ package com.heal.app.service;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.WriteBatch;
-import com.google.firebase.cloud.FirestoreClient;
 import com.heal.app.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
@@ -16,12 +16,14 @@ import java.util.Random;
 @Service
 public class DataSeedingService {
 
+    @Autowired
+    private Firestore db;
+
     private final Random random = new Random();
 
     @PostConstruct
     public void seedData() {
         try {
-            Firestore db = FirestoreClient.getFirestore();
             
             // Generate 5 users
             String[] names = {"Priya", "Ananya", "Sara", "Meera", "Ishita"};

@@ -20,7 +20,7 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/landing")
-    public ResponseEntity<UserLandingResponse> getLandingSummary(@RequestParam String userId) {
+    public ResponseEntity<?> getLandingSummary(@RequestParam String userId) {
         try {
             User user = userService.getUserLandingData(userId);
 
@@ -32,10 +32,11 @@ public class UserController {
                         .build();
                 return ResponseEntity.ok(response);
             } else {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404).body("User not found: " + userId);
             }
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.internalServerError().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error: " + e.getMessage() + ". Cause: " + e.getCause());
         }
     }
 }
