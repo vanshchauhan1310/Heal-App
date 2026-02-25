@@ -1,6 +1,6 @@
-package com.heal.app.controller;
+package com.heal.app.prediction;
 
-import com.heal.app.service.PredictionService;
+import com.heal.app.prediction.internal.PredictionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

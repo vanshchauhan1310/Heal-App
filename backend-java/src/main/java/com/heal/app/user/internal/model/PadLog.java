@@ -1,4 +1,4 @@
-package com.heal.app.model;
+package com.heal.app.user.internal.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,9 +8,10 @@ import com.google.cloud.firestore.annotation.DocumentId;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class YogaAttendanceLog {
+public class PadLog {
     @DocumentId
     private String id;
-    private String attendance_id;
-    private Boolean attended;
+    private String pad_log_id;
+    private String action;
+    private String pad_status;
 }

@@ -1,98 +1,97 @@
-# User Service v0 - Java Backend
+# Heal App - Java Backend (Spring Modulith)
 
-This service handles user data storage in Firestore and exposes a read endpoint for the Landing Page Summary.
+Welcome to the backend service for the Heal App. This project is a production-ready Java backend built with focus on modularity, scalability, and robust testing.
 
-## Tech Stack
-- Java 17
-- Spring Boot 3.1.5
-- Firebase Admin SDK (Firestore)
-- Lombok
+---
 
-## API Endpoints
+## 🚀 Tech Stack
 
-### Get Landing Page Summary
-- **Endpoint**: `GET /v1/me/landing?userId={userId}`
-- **Description**: Returns the profile, preferences, and landing page summary for the specified user.
-- **Example**: `GET /v1/me/landing?userId=usr_100`
+- **Lanuage**: Java 17
+- **Framework**: Spring Boot 3.1.5
+- **Architecture**: Spring Modulith (Modular Monolith)
+- **Database**: Google Firestore (Firebase Admin SDK)
+- **Testing**: JUnit 5, AssertJ, Mockito, Spring Modulith Test
+- **Build Tool**: Maven
+- **Infrastructure**: Docker, Render
 
-## Firestore Schema Structure
+---
 
-### Root Collection: `users`
-- **Document ID**: `{userId}` (e.g., `usr_123`)
-- **Fields**:
-  ```json
-  {
-    "user_id": "usr_123",
-    "schema_version": 1,
-    "created_at": "timestamp",
-    "updated_at": "timestamp",
-    "profile": { "name": "Priya" },
-    "preferences": { "daily_checkin_time": "20:30" },
-    "landing_page_summary": {
-      "risk": { "level": "medium", "score": 62 },
-      "heal_journey": null,
-      "next_yoga": null,
-      "cycle": { "last_period_start": "2026-02-01", "last_period_end": "2026-02-06" },
-      "pad_usage": { "status": "transitioning" }
-    }
-  }
-  ```
+## 🏛 Architecture: Spring Modulith
 
-### Subcollections under `users/{userId}`
+The project follows the **Spring Modulith** architectural pattern. Unlike a traditional layered monolith, this project is divided into **functional modules** (bounded contexts) that enforce strict encapsulation.
 
-#### 1. `assessment_logs`
-- **Document ID**: `{assessmentId}`
-- **Fields**:
-  ```json
-  {
-    "assessment_id": "asmt_001",
-    "questionnaire_version": "pcos_v1",
-    "answers": {},
-    "result": {}
-  }
-  ```
+### Project Structure
+```text
+src/main/java/com/heal/app/
+├── infra/              # Shared infrastructure module (Firebase config)
+├── prediction/         # Prediction module (Health logic)
+│   ├── internal/       # Encapsulated logic (Service)
+│   └── *.java          # Module API (Controller)
+└── user/               # User management module
+    ├── internal/       # Encapsulated logic & models
+    └── *.java          # Module API (Controller, DTOs)
+```
 
-#### 2. `period_logs`
-- **Document ID**: `{periodLogId}`
-- **Fields**:
-  ```json
-  {
-    "period_log_id": "per_001",
-    "action": "start",
-    "date": "2026-02-01"
-  }
-  ```
+### Encapsulation Rules 🛡️
+- **Public API**: Only classes in the top-level module package (e.g., `com.heal.app.user`) are visible to other modules.
+- **Internal Logic**: Packages named `internal` are strictly private. Spring Modulith will cause test failures if these boundaries are violated.
+- **Cross-Module Events**: Modules communicate through events or published public APIs, ensuring clean separation.
 
-#### 3. `yoga_attendance_logs`
-- **Document ID**: `{attendanceId}`
-- **Fields**:
-  ```json
-  {
-    "attendance_id": "yog_001",
-    "attended": true
-  }
-  ```
+---
 
-#### 4. `pad_logs`
-- **Document ID**: `{padLogId}`
-- **Fields**:
-  ```json
-  {
-    "pad_log_id": "pad_001",
-    "action": "status_update",
-    "pad_status": "transitioning"
-  }
-  ```
+## 🧪 Testing Strategy (JUnit 5 Suite)
 
-## How to Setup Firestore
+The project includes a multi-layered testing strategy to ensuring reliability.
 
-1. **Create Firebase Project**: Go to [Firebase Console](https://console.firebase.google.com/) and create a new project.
-2. **Enable Firestore**: In the build menu, select "Firestore Database" and click "Create Database".
-3. **Generate Service Account Key**:
-   - Go to Project Settings > Service accounts.
-   - Click "Generate new private key".
-   - Download the JSON file.
-4. **Place Service Account Key**:
-   - Rename the file to `serviceAccountKey.json`.
-   - Place it in `backend-java/src/main/resources/`.
-5. **Run Application**: Run the Spring Boot application. The `DataSeedingService` will automatically populate the stub data on startup if it doesn't already exist.
+### 1. Architectural Verification
+We use `ApplicationModules.verify()` to ensure the project structure hasn't drifted from the modularity rules. It also generates UML diagrams of the system architecture.
+- **Run**: `mvn test -Dtest=ModulithTest`
+
+### 2. Unit Testing
+Critical business logic is tested in isolation using **AssertJ** for expressive assertions.
+- **Example**: `PredictionServiceTest` verifies algorithms without needing the full Spring Context.
+
+### 3. Web Slice Testing
+We use `@WebMvcTest` to test REST endpoints. This ignores the database and uses **Mockito** to mock dependencies, focusing only on the web layer (JSON mapping, HTTP status codes).
+- **Example**: `UserControllerTest` verifies the `/v1/me/landing` endpoint.
+
+---
+
+## 📡 API Endpoints
+
+### 👤 User Module
+- **GET** `/v1/me/landing?userId={id}`
+  - Returns: Profile, Preferences, and Landing Page Summary.
+  - Seeding: The app automatically seeds 5 users (`usr_100` to `usr_104`) on startup if the database is empty.
+
+### 🔮 Prediction Module
+- **POST** `/api/predict-period`
+  - Body: `{ "userId": "...", "screeningId": "..." }`
+  - Returns: Predicted next period date.
+
+---
+
+## ☁️ Deployment & Configuration
+
+### Firestore Setup
+1. Place your `serviceAccountKey.json` in `src/main/resources/`.
+2. For production (Render), use either:
+   - **Secret Files**: Set `FIREBASE_CONFIG_PATH` to `/etc/secrets/serviceAccountKey.json`.
+   - **Environment Variable**: Paste the JSON content into `FIREBASE_SERVICE_ACCOUNT_JSON`.
+
+### Docker
+The project uses a multi-stage Dockerfile based on **Eclipse Temurin 17** (Ubuntu/JRE) to ensure compatibility with Firebase's native gRPC libraries and avoid SIGSEGV crashes.
+
+```bash
+docker build -t heal-app-backend .
+docker run -p 8080:8080 heal-app-backend
+```
+
+---
+
+## 🛠 Useful Commands
+
+- **Run Locally**: `mvn spring-boot:run`
+- **Run Tests**: `mvn test`
+- **Build Package**: `mvn clean package`
+- **Verify Modulith**: `mvn spring-modulith:check` (Requires plugin)

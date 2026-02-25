@@ -1,4 +1,4 @@
-package com.heal.app.model;
+package com.heal.app.user.internal.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

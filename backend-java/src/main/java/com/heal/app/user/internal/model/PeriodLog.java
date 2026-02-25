@@ -1,4 +1,4 @@
-package com.heal.app.model;
+package com.heal.app.user.internal.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,10 +8,10 @@ import com.google.cloud.firestore.annotation.DocumentId;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PadLog {
+public class PeriodLog {
     @DocumentId
     private String id;
-    private String pad_log_id;
+    private String period_log_id;
     private String action;
-    private String pad_status;
+    private String date;
 }
