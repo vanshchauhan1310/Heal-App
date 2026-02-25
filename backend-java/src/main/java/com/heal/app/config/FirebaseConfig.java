@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,52 +22,57 @@ public class FirebaseConfig {
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseOptions options = null;
 
-            // Method 1: Try to initialize from a full JSON string in environment variables (Very reliable for Render/Railway)
+            // 1. Try JSON String Env Var
             String jsonConfig = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
             if (jsonConfig != null && !jsonConfig.isEmpty()) {
-                System.out.println("Attempting to initialize Firebase from FIREBASE_SERVICE_ACCOUNT_JSON env var...");
+                System.out.println("DEBUG: Found FIREBASE_SERVICE_ACCOUNT_JSON. Initializing...");
                 try (ByteArrayInputStream is = new ByteArrayInputStream(jsonConfig.getBytes(StandardCharsets.UTF_8))) {
                     options = FirebaseOptions.builder()
                             .setCredentials(GoogleCredentials.fromStream(is))
                             .build();
-                    System.out.println("Success: Firebase initialized from JSON string.");
-                } catch (Exception e) {
-                    System.err.println("Failed to initialize from JSON string: " + e.getMessage());
                 }
             }
 
-            // Method 2: Try to find the service account key file (Used for Render Secret Files)
+            // 2. Try File Path Env Var
             if (options == null) {
                 String serviceAccountPath = System.getenv("FIREBASE_CONFIG_PATH");
-                if (serviceAccountPath == null) {
-                    serviceAccountPath = "src/main/resources/serviceAccountKey.json";
-                }
-
-                System.out.println("Attempting to initialize Firebase from file path: " + serviceAccountPath);
-                try (FileInputStream serviceAccount = new FileInputStream(serviceAccountPath)) {
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .build();
-                    System.out.println("Success: Firebase initialized from file: " + serviceAccountPath);
-                } catch (IOException e) {
-                    System.err.println("File not found or unreadable at: " + serviceAccountPath);
+                System.out.println("DEBUG: FIREBASE_CONFIG_PATH value is: " + (serviceAccountPath == null ? "NULL" : serviceAccountPath));
+                
+                if (serviceAccountPath != null) {
+                    File file = new File(serviceAccountPath);
+                    if (file.exists()) {
+                        System.out.println("DEBUG: File exists at " + serviceAccountPath + ". Reading...");
+                        try (FileInputStream serviceAccount = new FileInputStream(file)) {
+                            options = FirebaseOptions.builder()
+                                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                                    .build();
+                        }
+                    } else {
+                        System.err.println("DEBUG ERROR: No file found at path provided in env var: " + serviceAccountPath);
+                    }
                 }
             }
 
-            // Method 3: Fallback to Google Application Default Credentials (Only works on GCP)
+            // 3. Last resort: Default local path
             if (options == null) {
-                System.out.println("Falling back to Google Application Default Credentials...");
-                try {
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.getApplicationDefault())
-                            .build();
-                    System.out.println("Success: Firebase initialized from Application Default Credentials.");
-                } catch (IOException e) {
-                    throw new IOException("Critical Error: No Firebase credentials found. Please set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_CONFIG_PATH.", e);
+                String defaultPath = "src/main/resources/serviceAccountKey.json";
+                File file = new File(defaultPath);
+                if (file.exists()) {
+                    System.out.println("DEBUG: Found local file at " + defaultPath);
+                    try (FileInputStream serviceAccount = new FileInputStream(file)) {
+                        options = FirebaseOptions.builder()
+                                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                                .build();
+                    }
                 }
+            }
+
+            if (options == null) {
+                throw new IOException("CRITICAL ERROR: No credentials found! Check if the Environment Group is 'Linked' to your service in Render settings.");
             }
 
             FirebaseApp.initializeApp(options);
+            System.out.println("Firebase initialized successfully!");
         }
         return FirestoreClient.getFirestore();
     }
