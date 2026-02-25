@@ -19,31 +19,36 @@ public class HealBackendApplication {
 
     @PostConstruct
     public void initializeFirebase() {
+        if (!FirebaseApp.getApps().isEmpty()) {
+            return;
+        }
+
         try {
-            if (FirebaseApp.getApps().isEmpty()) {
-                FirebaseOptions options;
-                
-                // Try to find the service account key file
-                String serviceAccountPath = System.getenv("FIREBASE_CONFIG_PATH");
-                if (serviceAccountPath == null) {
-                    serviceAccountPath = "src/main/resources/serviceAccountKey.json";
-                }
+            FirebaseOptions options;
 
-                try (FileInputStream serviceAccount = new FileInputStream(serviceAccountPath)) {
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .build();
-                } catch (IOException e) {
-                    // Fallback to default credentials (useful for GCP environments like Cloud Run)
-                    System.out.println("Local service account file not found, falling back to default Google credentials...");
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.getApplicationDefault())
-                            .build();
-                }
-
-                FirebaseApp.initializeApp(options);
-                System.out.println("Firebase initialized successfully.");
+            // Use FIREBASE_CONFIG_PATH if set (e.g., on Render Pointing to /etc/secrets/...)
+            // Otherwise fallback to local development path
+            String serviceAccountPath = System.getenv("FIREBASE_CONFIG_PATH");
+            if (serviceAccountPath == null) {
+                serviceAccountPath = "src/main/resources/serviceAccountKey.json";
             }
+
+            System.out.println("Initializing Firebase with key from: " + serviceAccountPath);
+
+            try (FileInputStream serviceAccount = new FileInputStream(serviceAccountPath)) {
+                options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
+            } catch (IOException e) {
+                // Final fallback to default credentials (GCP environment standard)
+                System.out.println("Service account file not found at " + serviceAccountPath + ", falling back to default Google credentials...");
+                options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.getApplicationDefault())
+                        .build();
+            }
+
+            FirebaseApp.initializeApp(options);
+            System.out.println("Firebase initialized successfully.");
         } catch (IOException e) {
             System.err.println("Critical Error: Could not initialize Firebase: " + e.getMessage());
         }

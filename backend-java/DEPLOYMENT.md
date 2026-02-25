@@ -39,14 +39,21 @@ gcloud run deploy heal-backend \
 
 ---
 
-## Option 2: Deploy to Render / Heroku / Railway
+## Option 2: Deploy to Render (Recommended for Secret Files)
 
-These platforms can automatically build from your `Dockerfile`.
+Render allows you to upload "Secret Files" which are mounted to the container.
 
-1. Connect your GitHub repository to the platform.
-2. Select the `backend-java` directory as the root.
-3. The platform will read the `Dockerfile` and build the image.
-4. **Environment Variables**: Add an environment variable named `GOOGLE_APPLICATION_CREDENTIALS` and paste the entire JSON content of your `serviceAccountKey.json` into it (some platforms support this directly).
+1.  **Create Secret File**:
+    *   In Render Dashboard, go to your **Service** > **Environment**.
+    *   Under **Secret Files**, click **Add Secret File**.
+    *   **Filename**: `serviceAccountKey.json`
+    *   **Contents**: Paste your entire JSON key file.
+2.  **Add Environment Variable**:
+    *   In the same **Environment** tab, add an Environment Variable:
+    *   **Key**: `FIREBASE_CONFIG_PATH`
+    *   **Value**: `/etc/secrets/serviceAccountKey.json`
+3.  **Deployment**:
+    *   Render will automatically build your `Dockerfile` from the root or the `backend-java` subdirectory.
 
 ---
 
