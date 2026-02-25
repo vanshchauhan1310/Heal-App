@@ -5,7 +5,8 @@ COPY pom.xml /home/app
 RUN mvn -f /home/app/pom.xml clean package -DskipTests
 
 # Package stage
-FROM eclipse-temurin:17-jre-alpine
+# Using standard jre (Debian-based) instead of alpine to fix SIGSEGV crash with Firestore/gRPC native libraries
+FROM eclipse-temurin:17-jre
 COPY --from=build /home/app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app.jar"]
