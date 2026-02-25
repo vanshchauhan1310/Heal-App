@@ -1,5 +1,16 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+
+# secrets
+*.json
+serviceAccountKey.json
+*-privatekey.json
+
+# build
+target/
+
+
+
 # dependencies
 node_modules/
 
